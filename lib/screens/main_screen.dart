@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../widgets/bottom_navigation.dart';
 import 'home_screen.dart';
 import 'parking_screen.dart';
+import '../models/reservation.dart';
+import 'reservations_screen.dart';
+
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -13,17 +16,10 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  
+  final List<Reservation> _reservations = [];
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    ParkingScreen(),
-    Center(
-      child: Text('Reservas'),
-    ),
-    Center(
-      child: Text('Perfil'),
-    ),
-  ];
+
 
   void _onDestinationSelected(int index) {
     setState(() {
@@ -31,14 +27,34 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  void _addReservation(Reservation reservation) {
+  setState(() {
+    _reservations.add(reservation);
+  });
+ }
+
+  
+
   @override
   Widget build(BuildContext context) {
+    final screens = [
+      const HomeScreen(),
+      ParkingScreen(
+        onReservationCreated: _addReservation,
+      ),
+      ReservationsScreen(
+        reservations: _reservations,
+      ),
+      const Center(
+        child: Text('Perfil'),
+      ),
+    ];
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: screens[_currentIndex],
       bottomNavigationBar: BottomNavigation(
         currentIndex: _currentIndex,
         onDestinationSelected: _onDestinationSelected,
       ),
     );
   }
-} 
+}
