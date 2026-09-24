@@ -27,9 +27,7 @@ class ReservationScreen extends StatelessWidget {
               Icons.local_parking,
               size: 64,
             ),
-
             const SizedBox(height: 20),
-
             const Text(
               'Espacio seleccionado',
               textAlign: TextAlign.center,
@@ -38,9 +36,7 @@ class ReservationScreen extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-
             const SizedBox(height: 8),
-
             Text(
               spaceId,
               textAlign: TextAlign.center,
@@ -49,9 +45,7 @@ class ReservationScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 24),
-
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -84,9 +78,7 @@ class ReservationScreen extends StatelessWidget {
                 ),
               ),
             ),
-
             const SizedBox(height: 28),
-
             SizedBox(
               height: 52,
               child: ElevatedButton(
