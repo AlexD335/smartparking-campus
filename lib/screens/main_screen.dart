@@ -5,6 +5,7 @@ import 'home_screen.dart';
 import 'parking_screen.dart';
 import '../models/reservation.dart';
 import 'reservations_screen.dart';
+import 'profile_screen.dart';
 
 
 class MainScreen extends StatefulWidget {
@@ -45,9 +46,7 @@ class _MainScreenState extends State<MainScreen> {
       ReservationsScreen(
         reservations: _reservations,
       ),
-      const Center(
-        child: Text('Perfil'),
-      ),
+      const ProfileScreen(),
     ];
     return Scaffold(
       body: screens[_currentIndex],
