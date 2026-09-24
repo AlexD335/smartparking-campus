@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/reservation.dart';
 
 class ReservationScreen extends StatelessWidget {
   const ReservationScreen({
@@ -6,11 +7,13 @@ class ReservationScreen extends StatelessWidget {
     required this.spaceId,
     required this.zone,
     required this.location,
+    required this.onReservationCreated,
   });
 
   final String spaceId;
   final String zone;
   final String location;
+  final ValueChanged<Reservation> onReservationCreated;
 
   @override
   Widget build(BuildContext context) {
@@ -83,6 +86,16 @@ class ReservationScreen extends StatelessWidget {
               height: 52,
               child: ElevatedButton(
                 onPressed: () {
+                  final reservation = Reservation(
+                    spaceId: spaceId,
+                    zone: zone,
+                    location: location,
+                    date: 'Hoy',
+                    time: '8:00 AM',
+                  );
+                  
+                  onReservationCreated(reservation);
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Reserva confirmada'),

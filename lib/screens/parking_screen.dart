@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+
 import 'reservation_screen.dart';
 
+import '../models/reservation.dart';
+
 class ParkingScreen extends StatelessWidget {
-  const ParkingScreen({super.key});
+  const ParkingScreen({
+    super.key,
+    required this.onReservationCreated,
+  });
+
+  final ValueChanged<Reservation> onReservationCreated;
 
   final List<Map<String, dynamic>> parkingSpaces = const [
     {
@@ -57,6 +65,7 @@ class ParkingScreen extends StatelessWidget {
               zone: space['zone'] as String,
               location: space['location'] as String,
               available: space['available'] as bool,
+              onReservationCreated: onReservationCreated,
             ),
           ),
         ],
@@ -71,12 +80,14 @@ class _ParkingSpaceCard extends StatelessWidget {
     required this.zone,
     required this.location,
     required this.available,
+    required this.onReservationCreated,
   });
 
   final String id;
   final String zone;
   final String location;
   final bool available;
+  final ValueChanged<Reservation> onReservationCreated;
 
   @override
   Widget build(BuildContext context) {
@@ -130,6 +141,7 @@ class _ParkingSpaceCard extends StatelessWidget {
                           spaceId: id,
                           zone: zone,
                           location: location,
+                          onReservationCreated: onReservationCreated,
                         ),
                       ),
                     );
