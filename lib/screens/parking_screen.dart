@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'reservation_screen.dart';
 
 class ParkingScreen extends StatelessWidget {
   const ParkingScreen({super.key});
@@ -121,7 +122,18 @@ class _ParkingSpaceCard extends StatelessWidget {
                 width: double.infinity,
                 height: 46,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReservationScreen(
+                          spaceId: id,
+                          zone: zone,
+                          location: location,
+                        ),
+                      ),
+                    );
+                  },
                   child: Text('SELECCIONAR $id'),
                 ),
               ),
