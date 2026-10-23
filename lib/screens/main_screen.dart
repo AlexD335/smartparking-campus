@@ -42,6 +42,7 @@ class _MainScreenState extends State<MainScreen> {
       const HomeScreen(),
       ParkingScreen(
         onReservationCreated: _addReservation,
+        reservedSpaceIds: _reservations.map((reservation) => reservation.spaceId).toSet(),
       ),
       ReservationsScreen(
         reservations: _reservations,

@@ -8,10 +8,11 @@ class ParkingScreen extends StatelessWidget {
   const ParkingScreen({
     super.key,
     required this.onReservationCreated,
+    this.reservedSpaceIds = const <String>{},
   });
 
   final ValueChanged<Reservation> onReservationCreated;
-
+  final Set<String> reservedSpaceIds;
   final List<Map<String, dynamic>> parkingSpaces = const [
     {
       'id': 'A-25',
@@ -36,26 +37,18 @@ class ParkingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Parqueadero'),
-      ),
+      appBar: AppBar(title: const Text('Parqueadero')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           const Text(
             'Espacios disponibles',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
             'Selecciona un espacio para continuar con tu reserva.',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 15, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 20),
 
@@ -64,7 +57,9 @@ class ParkingScreen extends StatelessWidget {
               id: space['id'] as String,
               zone: space['zone'] as String,
               location: space['location'] as String,
-              available: space['available'] as bool,
+              available:
+                  (space['available'] as bool) &&
+                  !reservedSpaceIds.contains(space['id'] as String),
               onReservationCreated: onReservationCreated,
             ),
           ),
@@ -100,10 +95,7 @@ class _ParkingSpaceCard extends StatelessWidget {
           children: [
             Text(
               id,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 6),
             Text('$zone · $location'),
