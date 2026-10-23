@@ -7,7 +7,6 @@ import '../models/reservation.dart';
 import 'reservations_screen.dart';
 import 'profile_screen.dart';
 
-
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -17,10 +16,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
-  
+
   final List<Reservation> _reservations = [];
-
-
 
   void _onDestinationSelected(int index) {
     setState(() {
@@ -29,12 +26,16 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _addReservation(Reservation reservation) {
-  setState(() {
-    _reservations.add(reservation);
-  });
- }
+    setState(() {
+      _reservations.add(reservation);
+    });
+  }
 
-  
+  void _cancelReservation(Reservation reservation) {
+    setState(() {
+      _reservations.remove(reservation);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,10 +43,13 @@ class _MainScreenState extends State<MainScreen> {
       const HomeScreen(),
       ParkingScreen(
         onReservationCreated: _addReservation,
-        reservedSpaceIds: _reservations.map((reservation) => reservation.spaceId).toSet(),
+        reservedSpaceIds: _reservations
+            .map((reservation) => reservation.spaceId)
+            .toSet(),
       ),
       ReservationsScreen(
         reservations: _reservations,
+        onReservationCancelled: _cancelReservation,
       ),
       const ProfileScreen(),
     ];
