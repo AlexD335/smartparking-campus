@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/reservation.dart';
 
 class ReservationScreen extends StatelessWidget {
@@ -18,35 +19,24 @@ class ReservationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Confirmar reserva'),
-      ),
+      appBar: AppBar(title: const Text('Confirmar reserva')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Icon(
-              Icons.local_parking,
-              size: 64,
-            ),
+            const Icon(Icons.local_parking, size: 64),
             const SizedBox(height: 20),
             const Text(
               'Espacio seleccionado',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             Text(
               spaceId,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
             Card(
@@ -93,21 +83,16 @@ class ReservationScreen extends StatelessWidget {
                     date: 'Hoy',
                     time: '8:00 AM',
                   );
-                  
+
                   onReservationCreated(reservation);
 
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Reserva confirmada'),
-                    ),
+                    const SnackBar(content: Text('Reserva confirmada')),
                   );
                 },
                 child: const Text(
                   'CONFIRMAR RESERVA',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -141,10 +126,7 @@ class _ReservationDetail extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 4),
               Text(

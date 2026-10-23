@@ -6,24 +6,21 @@ class ReservationsScreen extends StatelessWidget {
   const ReservationsScreen({
     super.key,
     required this.reservations,
+    required this.onReservationCancelled,
   });
 
   final List<Reservation> reservations;
+  final ValueChanged<Reservation> onReservationCancelled;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mis reservas'),
-      ),
+      appBar: AppBar(title: const Text('Mis reservas')),
       body: reservations.isEmpty
           ? const Center(
               child: Text(
                 'No tienes reservas todavía.',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             )
           : ListView.builder(
@@ -41,10 +38,7 @@ class ReservationsScreen extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Icon(
-                              Icons.local_parking,
-                              size: 28,
-                            ),
+                            const Icon(Icons.local_parking, size: 28),
                             const SizedBox(width: 12),
                             Text(
                               reservation.spaceId,
@@ -66,27 +60,62 @@ class ReservationsScreen extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           reservation.location,
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                          ),
+                          style: TextStyle(color: Colors.grey.shade600),
                         ),
                         const Divider(height: 28),
                         Row(
                           children: [
-                            const Icon(
-                              Icons.calendar_today_outlined,
-                              size: 20,
-                            ),
+                            const Icon(Icons.calendar_today_outlined, size: 20),
                             const SizedBox(width: 8),
                             Text(reservation.date),
                             const SizedBox(width: 20),
-                            const Icon(
-                              Icons.access_time,
-                              size: 20,
-                            ),
+                            const Icon(Icons.access_time, size: 20),
                             const SizedBox(width: 8),
                             Text(reservation.time),
                           ],
+                        ),
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            icon: const Icon(Icons.cancel_outlined),
+                            label: const Text('Cancelar reserva'),
+                            onPressed: () {
+                              showDialog<void>(
+                                context: context,
+                                builder: (dialogContext) => AlertDialog(
+                                  title: const Text('Cancelar reserva'),
+                                  content: Text(
+                                    '¿Deseas cancelar la reserva del espacio '
+                                    '${reservation.spaceId}?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(dialogContext).pop();
+                                      },
+                                      child: const Text('Volver'),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.of(dialogContext).pop();
+                                        onReservationCancelled(reservation);
+
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Reserva cancelada'),
+                                          ),
+                                        );
+                                      },
+                                      child: const Text('Confirmar'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ],
                     ),
