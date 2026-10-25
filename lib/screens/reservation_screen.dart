@@ -26,6 +26,64 @@ class ReservationScreen extends StatefulWidget {
 class _ReservationScreenState extends State<ReservationScreen> {
   bool _isSubmitting = false;
 
+  late DateTime _selectedDate;
+  TimeOfDay _selectedTime = const TimeOfDay(hour: 8, minute: 0);
+
+  @override
+  void initState() {
+    super.initState();
+
+    final now = DateTime.now();
+    _selectedDate = DateTime(now.year, now.month, now.day);
+  }
+
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+
+    return '$day/$month/${date.year}';
+  }
+
+  Future<void> _selectDate() async {
+    final now = DateTime.now();
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: DateTime(now.year + 5, 12, 31),
+      helpText: 'Selecciona la fecha de la reserva',
+      cancelText: 'CANCELAR',
+      confirmText: 'ACEPTAR',
+    );
+
+    if (pickedDate != null && mounted) {
+      setState(() {
+        _selectedDate = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+        );
+      });
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+      helpText: 'Selecciona la hora de la reserva',
+      cancelText: 'CANCELAR',
+      confirmText: 'ACEPTAR',
+    );
+
+    if (pickedTime != null && mounted) {
+      setState(() {
+        _selectedTime = pickedTime;
+      });
+    }
+  }
+
   Future<void> _confirmReservation() async {
     if (_isSubmitting) return;
 
@@ -33,11 +91,14 @@ class _ReservationScreenState extends State<ReservationScreen> {
       _isSubmitting = true;
     });
 
-    final now = DateTime.now();
     final reservationDate =
-        '${now.year.toString().padLeft(4, '0')}-'
-        '${now.month.toString().padLeft(2, '0')}-'
-        '${now.day.toString().padLeft(2, '0')}';
+        '${_selectedDate.year.toString().padLeft(4, '0')}-'
+        '${_selectedDate.month.toString().padLeft(2, '0')}-'
+        '${_selectedDate.day.toString().padLeft(2, '0')}';
+
+    final reservationTime =
+        '${_selectedTime.hour.toString().padLeft(2, '0')}:'
+        '${_selectedTime.minute.toString().padLeft(2, '0')}:00';
 
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
@@ -47,17 +108,18 @@ class _ReservationScreenState extends State<ReservationScreen> {
         userId: 1,
         parkingSpaceId: widget.parkingSpaceId,
         reservationDate: reservationDate,
-        reservationTime: '08:00:00',
+        reservationTime: reservationTime,
       );
 
       if (!mounted) return;
 
       final reservation = Reservation(
         spaceId: widget.spaceId,
+        parkingSpaceId: widget.parkingSpaceId,
         zone: widget.zone,
         location: widget.location,
-        date: 'Hoy',
-        time: '8:00 AM',
+        date: _formatDate(_selectedDate),
+        time: _selectedTime.format(context),
       );
 
       widget.onReservationCreated(reservation);
@@ -120,20 +182,28 @@ class _ReservationScreenState extends State<ReservationScreen> {
                       value: widget.location,
                     ),
                     const Divider(height: 28),
-                    const _ReservationDetail(
+                    _ReservationDetail(
                       icon: Icons.calendar_today_outlined,
                       label: 'Fecha',
-                      value: 'Hoy',
+                      value: _formatDate(_selectedDate),
+                      onTap: _selectDate,
                     ),
                     const Divider(height: 28),
-                    const _ReservationDetail(
+                    _ReservationDetail(
                       icon: Icons.access_time,
                       label: 'Hora',
-                      value: '8:00 AM',
+                      value: _selectedTime.format(context),
+                      onTap: _selectTime,
                     ),
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Toca la fecha o la hora para modificarlas.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
             ),
             const SizedBox(height: 28),
             SizedBox(
@@ -167,38 +237,49 @@ class _ReservationDetail extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 28),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Icon(icon, size: 28),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+            ),
+            if (onTap != null)
+              const Icon(Icons.edit_calendar_outlined, size: 20),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
