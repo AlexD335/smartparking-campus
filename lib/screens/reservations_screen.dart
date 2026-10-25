@@ -10,7 +10,7 @@ class ReservationsScreen extends StatelessWidget {
   });
 
   final List<Reservation> reservations;
-  final ValueChanged<Reservation> onReservationCancelled;
+  final Future<void> Function(Reservation) onReservationCancelled;
 
   @override
   Widget build(BuildContext context) {
@@ -97,16 +97,11 @@ class ReservationsScreen extends StatelessWidget {
                                       child: const Text('Volver'),
                                     ),
                                     ElevatedButton(
-                                      onPressed: () {
+                                      onPressed: () async {
                                         Navigator.of(dialogContext).pop();
-                                        onReservationCancelled(reservation);
 
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Reserva cancelada'),
-                                          ),
+                                        await onReservationCancelled(
+                                          reservation,
                                         );
                                       },
                                       child: const Text('Confirmar'),
