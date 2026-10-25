@@ -1,20 +1,84 @@
 import 'package:flutter/material.dart';
 
 import '../models/reservation.dart';
+import '../services/reservation_service.dart';
 
-class ReservationScreen extends StatelessWidget {
+class ReservationScreen extends StatefulWidget {
   const ReservationScreen({
     super.key,
     required this.spaceId,
+    required this.parkingSpaceId,
     required this.zone,
     required this.location,
     required this.onReservationCreated,
   });
 
   final String spaceId;
+  final int parkingSpaceId;
   final String zone;
   final String location;
   final ValueChanged<Reservation> onReservationCreated;
+
+  @override
+  State<ReservationScreen> createState() => _ReservationScreenState();
+}
+
+class _ReservationScreenState extends State<ReservationScreen> {
+  bool _isSubmitting = false;
+
+  Future<void> _confirmReservation() async {
+    if (_isSubmitting) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final now = DateTime.now();
+    final reservationDate =
+        '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    try {
+      await ReservationService().createReservation(
+        userId: 1,
+        parkingSpaceId: widget.parkingSpaceId,
+        reservationDate: reservationDate,
+        reservationTime: '08:00:00',
+      );
+
+      if (!mounted) return;
+
+      final reservation = Reservation(
+        spaceId: widget.spaceId,
+        zone: widget.zone,
+        location: widget.location,
+        date: 'Hoy',
+        time: '8:00 AM',
+      );
+
+      widget.onReservationCreated(reservation);
+
+      navigator.pop();
+
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Reserva guardada correctamente')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isSubmitting = false;
+      });
+
+      messenger.showSnackBar(
+        SnackBar(content: Text('No se pudo guardar la reserva. $error')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +98,7 @@ class ReservationScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              spaceId,
+              widget.spaceId,
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
             ),
@@ -47,13 +111,13 @@ class ReservationScreen extends StatelessWidget {
                     _ReservationDetail(
                       icon: Icons.location_on_outlined,
                       label: 'Zona',
-                      value: zone,
+                      value: widget.zone,
                     ),
                     const Divider(height: 28),
                     _ReservationDetail(
                       icon: Icons.place_outlined,
                       label: 'Ubicación',
-                      value: location,
+                      value: widget.location,
                     ),
                     const Divider(height: 28),
                     const _ReservationDetail(
@@ -75,25 +139,20 @@ class ReservationScreen extends StatelessWidget {
             SizedBox(
               height: 52,
               child: ElevatedButton(
-                onPressed: () {
-                  final reservation = Reservation(
-                    spaceId: spaceId,
-                    zone: zone,
-                    location: location,
-                    date: 'Hoy',
-                    time: '8:00 AM',
-                  );
-
-                  onReservationCreated(reservation);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Reserva confirmada')),
-                  );
-                },
-                child: const Text(
-                  'CONFIRMAR RESERVA',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                onPressed: _isSubmitting ? null : _confirmReservation,
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text(
+                        'CONFIRMAR RESERVA',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
           ],
