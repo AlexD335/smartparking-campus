@@ -10,10 +10,14 @@ class ParkingScreen extends StatefulWidget {
     super.key,
     required this.onReservationCreated,
     this.reservedSpaceIds = const <String>{},
+    required this.userId,
+    required this.token,
   });
 
   final ValueChanged<Reservation> onReservationCreated;
   final Set<String> reservedSpaceIds;
+  final int userId;
+  final String token;
 
   @override
   State<ParkingScreen> createState() => _ParkingScreenState();
@@ -109,6 +113,8 @@ class _ParkingScreenState extends State<ParkingScreen> {
                   available:
                       space.available &&
                       !widget.reservedSpaceIds.contains(space.code),
+                  userId: widget.userId,
+                  token: widget.token,
                   onReservationCreated: widget.onReservationCreated,
                 ),
               ),
@@ -128,6 +134,8 @@ class _ParkingSpaceCard extends StatelessWidget {
     required this.location,
     required this.available,
     required this.onReservationCreated,
+    required this.userId,
+    required this.token,
   });
 
   final String id;
@@ -136,6 +144,8 @@ class _ParkingSpaceCard extends StatelessWidget {
   final String location;
   final bool available;
   final ValueChanged<Reservation> onReservationCreated;
+  final int userId;
+  final String token;
 
   @override
   Widget build(BuildContext context) {
@@ -186,6 +196,8 @@ class _ParkingSpaceCard extends StatelessWidget {
                           zone: zone,
                           location: location,
                           onReservationCreated: onReservationCreated,
+                          userId: userId,
+                          token: token,
                         ),
                       ),
                     );

@@ -11,6 +11,8 @@ class ReservationScreen extends StatefulWidget {
     required this.zone,
     required this.location,
     required this.onReservationCreated,
+    required this.userId,
+    required this.token,
   });
 
   final String spaceId;
@@ -18,6 +20,8 @@ class ReservationScreen extends StatefulWidget {
   final String zone;
   final String location;
   final ValueChanged<Reservation> onReservationCreated;
+  final int userId;
+  final String token;
 
   @override
   State<ReservationScreen> createState() => _ReservationScreenState();
@@ -105,10 +109,11 @@ class _ReservationScreenState extends State<ReservationScreen> {
 
     try {
       await ReservationService().createReservation(
-        userId: 1,
+        userId: widget.userId,
         parkingSpaceId: widget.parkingSpaceId,
         reservationDate: reservationDate,
         reservationTime: reservationTime,
+        token: widget.token,
       );
 
       if (!mounted) return;
