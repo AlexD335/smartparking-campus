@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/auth_session.dart';
 import '../models/reservation.dart';
 import '../services/reservation_service.dart';
 import '../widgets/bottom_navigation.dart';
@@ -9,7 +10,9 @@ import 'reservations_screen.dart';
 import 'profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  const MainScreen({super.key, this.session});
+
+  final AuthSession? session;
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -26,10 +29,28 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    _loadReservations();
+
+    if (widget.session == null) {
+      _isLoadingReservations = false;
+      _reservationsError = 'Inicia sesión para consultar tus reservas.';
+    } else {
+      _loadReservations();
+    }
   }
 
   Future<void> _loadReservations({bool showLoading = false}) async {
+    final session = widget.session;
+
+    if (session == null) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingReservations = false;
+        _reservationsError = 'Inicia sesión para consultar tus reservas.';
+      });
+      return;
+    }
+
     if (showLoading && mounted) {
       setState(() {
         _isLoadingReservations = true;
@@ -38,7 +59,10 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     try {
-      final reservations = await _reservationService.getReservationsByUserId(1);
+      final reservations = await _reservationService.getReservationsByUserId(
+        session.userId,
+        token: session.token,
+      );
 
       final activeReservations = reservations
           .where((reservation) => reservation.status == 'CONFIRMED')
@@ -76,19 +100,24 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _cancelReservation(Reservation reservation) async {
+    final session = widget.session;
     final reservationId = reservation.reservationId;
 
-    if (reservationId == null) {
+    if (session == null || reservationId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No se encontró el identificador de la reserva.'),
+          content: Text('No se pudo identificar la sesión o la reserva.'),
         ),
       );
       return;
     }
 
     try {
-      await _reservationService.cancelReservation(reservationId);
+      await _reservationService.cancelReservation(
+        reservationId,
+        token: session.token,
+      );
+
       await _loadReservations();
 
       if (!mounted) return;
@@ -107,10 +136,7 @@ class _MainScreenState extends State<MainScreen> {
 
   Widget _buildReservationsContent() {
     if (_isLoadingReservations) {
-      return const Scaffold(
-        appBar: null,
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_reservationsError != null) {
@@ -122,10 +148,7 @@ class _MainScreenState extends State<MainScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'No se pudieron cargar tus reservas.',
-                  textAlign: TextAlign.center,
-                ),
+                Text(_reservationsError!, textAlign: TextAlign.center),
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () => _loadReservations(showLoading: true),
@@ -148,12 +171,19 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final screens = [
       const HomeScreen(),
-      ParkingScreen(
-        onReservationCreated: _addReservation,
-        reservedSpaceIds: _reservations
-            .map((reservation) => reservation.spaceId)
-            .toSet(),
-      ),
+      widget.session == null
+          ? Scaffold(
+              appBar: AppBar(title: const Text('Parqueadero')),
+              body: const Center(child: Text('Inicia sesión para reservar.')),
+            )
+          : ParkingScreen(
+              onReservationCreated: _addReservation,
+              reservedSpaceIds: _reservations
+                  .map((reservation) => reservation.spaceId)
+                  .toSet(),
+              userId: widget.session!.userId,
+              token: widget.session!.token,
+            ),
       _buildReservationsContent(),
       const ProfileScreen(),
     ];
