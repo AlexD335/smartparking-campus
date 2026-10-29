@@ -25,90 +25,87 @@ import java.util.List;
 @RequestMapping("/api/reservas")
 public class ReservationController {
 
-    private final ReservationService reservationService;
+        private final ReservationService reservationService;
 
-    public ReservationController(ReservationService reservationService) {
-        this.reservationService = reservationService;
-    }
-
-    @PostMapping
-    public ResponseEntity<Reservation> createReservation(
-            @Valid @RequestBody CreateReservationRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
-
-        Long authenticatedUserId = getAuthenticatedUserId(jwt);
-
-        if (!authenticatedUserId.equals(request.userId())) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "No puedes crear reservas para otro usuario");
+        public ReservationController(ReservationService reservationService) {
+                this.reservationService = reservationService;
         }
 
-        Reservation reservation =
-                reservationService.createReservation(request);
+        @PostMapping
+        public ResponseEntity<Reservation> createReservation(
+                        @Valid @RequestBody CreateReservationRequest request,
+                        @AuthenticationPrincipal Jwt jwt) {
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(reservation);
-    }
+                Long authenticatedUserId = getAuthenticatedUserId(jwt);
 
-    @GetMapping("/usuario/{userId}")
-    public List<Reservation> getReservationsByUserId(
-            @PathVariable Long userId,
-            @AuthenticationPrincipal Jwt jwt) {
+                if (!authenticatedUserId.equals(request.userId())) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.FORBIDDEN,
+                                        "No puedes crear reservas para otro usuario");
+                }
 
-        Long authenticatedUserId = getAuthenticatedUserId(jwt);
+                Reservation reservation = reservationService.createReservation(request);
 
-        if (!authenticatedUserId.equals(userId)) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "No puedes consultar las reservas de otro usuario");
+                return ResponseEntity
+                                .status(HttpStatus.CREATED)
+                                .body(reservation);
         }
 
-        return reservationService.getReservationsByUserId(
-                authenticatedUserId);
-    }
+        @GetMapping("/usuario/{userId}")
+        public List<Reservation> getReservationsByUserId(
+                        @PathVariable Long userId,
+                        @AuthenticationPrincipal Jwt jwt) {
 
-    @PatchMapping("/{reservationId}/cancelar")
-    public ResponseEntity<Reservation> cancelReservation(
-            @PathVariable Long reservationId,
-            @AuthenticationPrincipal Jwt jwt) {
+                Long authenticatedUserId = getAuthenticatedUserId(jwt);
 
-        Long authenticatedUserId = getAuthenticatedUserId(jwt);
+                if (!authenticatedUserId.equals(userId)) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.FORBIDDEN,
+                                        "No puedes consultar las reservas de otro usuario");
+                }
 
-        boolean belongsToUser = reservationService
-                .getReservationsByUserId(authenticatedUserId)
-                .stream()
-                .anyMatch(reservation ->
-                        reservation.getId().equals(reservationId));
-
-        if (!belongsToUser) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "No se encontró la reserva para este usuario");
+                return reservationService.getReservationsByUserId(
+                                authenticatedUserId);
         }
 
-        Reservation reservation =
-                reservationService.cancelReservation(reservationId);
+        @PatchMapping("/{reservationId}/cancelar")
+        public ResponseEntity<Reservation> cancelReservation(
+                        @PathVariable Long reservationId,
+                        @AuthenticationPrincipal Jwt jwt) {
 
-        return ResponseEntity.ok(reservation);
-    }
+                Long authenticatedUserId = getAuthenticatedUserId(jwt);
 
-    private Long getAuthenticatedUserId(Jwt jwt) {
-        if (jwt == null) {
-            throw new ResponseStatusException(
-                    HttpStatus.UNAUTHORIZED,
-                    "Se requiere autenticación");
+                boolean belongsToUser = reservationService
+                                .getReservationsByUserId(authenticatedUserId)
+                                .stream()
+                                .anyMatch(reservation -> reservation.getId().equals(reservationId));
+
+                if (!belongsToUser) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "No se encontró la reserva para este usuario");
+                }
+
+                Reservation reservation = reservationService.cancelReservation(reservationId);
+
+                return ResponseEntity.ok(reservation);
         }
 
-        Object claim = jwt.getClaim("userId");
+        private Long getAuthenticatedUserId(Jwt jwt) {
+                if (jwt == null) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.UNAUTHORIZED,
+                                        "Se requiere autenticación");
+                }
 
-        if (claim instanceof Number number) {
-            return number.longValue();
+                Object claim = jwt.getClaim("userId");
+
+                if (claim instanceof Number number) {
+                        return number.longValue();
+                }
+
+                throw new ResponseStatusException(
+                                HttpStatus.UNAUTHORIZED,
+                                "El token no contiene un identificador de usuario válido");
         }
-
-        throw new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
-                "El token no contiene un identificador de usuario válido");
-    }
 }

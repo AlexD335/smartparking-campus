@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/reservation.dart';
 
 class ReservationService {
-  static const String _baseUrl = 'http://192.168.1.66:8080/api';
+  static const String _baseUrl = 'http://192.168.1.72:8080/api';
 
   Map<String, String> _headers(
     String? token, {

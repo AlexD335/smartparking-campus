@@ -170,7 +170,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      const HomeScreen(),
+      HomeScreen(onSearchSpace: () => _onDestinationSelected(1)),
       widget.session == null
           ? Scaffold(
               appBar: AppBar(title: const Text('Parqueadero')),
