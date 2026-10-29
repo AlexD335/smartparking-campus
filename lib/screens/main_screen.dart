@@ -85,6 +85,52 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  DateTime? _reservationDateTime(Reservation reservation) {
+    try {
+      final dateParts = reservation.date.split('/');
+      if (dateParts.length != 3) return null;
+
+      final day = int.parse(dateParts[0]);
+      final month = int.parse(dateParts[1]);
+      final year = int.parse(dateParts[2]);
+
+      final timeParts = reservation.time.trim().split(RegExp(r'\s+'));
+      if (timeParts.isEmpty) return null;
+
+      final clockParts = timeParts[0].split(':');
+      if (clockParts.length != 2) return null;
+
+      var hour = int.parse(clockParts[0]);
+      final minute = int.parse(clockParts[1]);
+
+      if (timeParts.length > 1) {
+        final period = timeParts[1].toUpperCase();
+        if (period == 'PM' && hour < 12) hour += 12;
+        if (period == 'AM' && hour == 12) hour = 0;
+      }
+
+      return DateTime(year, month, day, hour, minute);
+    } on FormatException {
+      return null;
+    }
+  }
+
+  Reservation? get _nextReservation {
+    final now = DateTime.now();
+    final upcoming = _reservations.where((reservation) {
+      final dateTime = _reservationDateTime(reservation);
+      return reservation.status == 'CONFIRMED' &&
+          dateTime != null &&
+          dateTime.isAfter(now);
+    }).toList();
+
+    upcoming.sort((a, b) {
+      return _reservationDateTime(a)!.compareTo(_reservationDateTime(b)!);
+    });
+
+    return upcoming.isEmpty ? null : upcoming.first;
+  }
+
   void _onDestinationSelected(int index) {
     setState(() {
       _currentIndex = index;
@@ -170,7 +216,13 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     final screens = [
-      HomeScreen(onSearchSpace: () => _onDestinationSelected(1)),
+      HomeScreen(
+        onSearchSpace: () => _onDestinationSelected(1),
+        nextReservation: _nextReservation,
+        isLoadingNextReservation: _isLoadingReservations,
+        nextReservationError: _reservationsError,
+        onRetryReservations: () => _loadReservations(showLoading: true),
+      ),
       widget.session == null
           ? Scaffold(
               appBar: AppBar(title: const Text('Parqueadero')),
