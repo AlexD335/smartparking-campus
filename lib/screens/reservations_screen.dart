@@ -71,7 +71,11 @@ class ReservationsScreen extends StatelessWidget {
                             const SizedBox(width: 20),
                             const Icon(Icons.access_time, size: 20),
                             const SizedBox(width: 8),
-                            Text(reservation.time),
+                            Text(
+                              reservation.endTime == null
+                                  ? reservation.time
+                                  : '${reservation.time} - ${reservation.endTime}',
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),

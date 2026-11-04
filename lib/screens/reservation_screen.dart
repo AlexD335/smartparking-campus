@@ -30,8 +30,16 @@ class ReservationScreen extends StatefulWidget {
 class _ReservationScreenState extends State<ReservationScreen> {
   bool _isSubmitting = false;
 
+  bool _isValidInterval() {
+    final startMinutes = _selectedTime.hour * 60 + _selectedTime.minute;
+    final endMinutes = _selectedEndTime.hour * 60 + _selectedEndTime.minute;
+
+    return endMinutes - startMinutes >= 60;
+  }
+
   late DateTime _selectedDate;
   TimeOfDay _selectedTime = const TimeOfDay(hour: 8, minute: 0);
+  TimeOfDay _selectedEndTime = const TimeOfDay(hour: 9, minute: 0);
 
   @override
   void initState() {
@@ -88,8 +96,35 @@ class _ReservationScreenState extends State<ReservationScreen> {
     }
   }
 
+  Future<void> _selectEndTime() async {
+    final pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _selectedEndTime,
+      helpText: 'Selecciona la hora de finalización',
+      cancelText: 'CANCELAR',
+      confirmText: 'ACEPTAR',
+    );
+
+    if (pickedTime != null && mounted) {
+      setState(() {
+        _selectedEndTime = pickedTime;
+      });
+    }
+  }
+
   Future<void> _confirmReservation() async {
     if (_isSubmitting) return;
+
+    if (!_isValidInterval()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'La reserva debe tener una duración mínima de una hora.',
+          ),
+        ),
+      );
+      return;
+    }
 
     setState(() {
       _isSubmitting = true;
@@ -104,6 +139,10 @@ class _ReservationScreenState extends State<ReservationScreen> {
         '${_selectedTime.hour.toString().padLeft(2, '0')}:'
         '${_selectedTime.minute.toString().padLeft(2, '0')}:00';
 
+    final reservationEndTime =
+        '${_selectedEndTime.hour.toString().padLeft(2, '0')}:'
+        '${_selectedEndTime.minute.toString().padLeft(2, '0')}:00';
+
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
@@ -113,6 +152,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
         parkingSpaceId: widget.parkingSpaceId,
         reservationDate: reservationDate,
         reservationTime: reservationTime,
+        reservationEndTime: reservationEndTime,
         token: widget.token,
       );
 
@@ -125,6 +165,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
         location: widget.location,
         date: _formatDate(_selectedDate),
         time: _selectedTime.format(context),
+        endTime: _selectedEndTime.format(context),
       );
 
       widget.onReservationCreated(reservation);
@@ -199,6 +240,13 @@ class _ReservationScreenState extends State<ReservationScreen> {
                       label: 'Hora',
                       value: _selectedTime.format(context),
                       onTap: _selectTime,
+                    ),
+                    const Divider(height: 28),
+                    _ReservationDetail(
+                      icon: Icons.access_time_filled,
+                      label: 'Hora de finalización',
+                      value: _selectedEndTime.format(context),
+                      onTap: _selectEndTime,
                     ),
                   ],
                 ),

@@ -9,6 +9,7 @@ public record CreateReservationRequest(
         @NotNull Long userId,
         @NotNull Long parkingSpaceId,
         @NotNull LocalDate reservationDate,
-        @NotNull LocalTime reservationTime
+        @NotNull LocalTime reservationTime,
+        @NotNull LocalTime reservationEndTime
 ) {
 }

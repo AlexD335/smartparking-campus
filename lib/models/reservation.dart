@@ -8,6 +8,7 @@ class Reservation {
     required this.date,
     required this.time,
     this.status = 'CONFIRMED',
+    this.endTime,
   });
 
   final int? reservationId;
@@ -18,6 +19,7 @@ class Reservation {
   final String date;
   final String time;
   final String status;
+  final String? endTime;
 
   factory Reservation.fromJson(Map<String, dynamic> json) {
     final parkingSpace = json['parkingSpace'] as Map<String, dynamic>;
@@ -31,6 +33,7 @@ class Reservation {
       date: _formatDate(json['reservationDate'] as String),
       time: _formatTime(json['reservationTime'] as String),
       status: json['status'] as String,
+      endTime: _formatTime(json['reservationEndTime'] as String),
     );
   }
 

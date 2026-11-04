@@ -29,6 +29,7 @@ class ReservationService {
     required int parkingSpaceId,
     required String reservationDate,
     required String reservationTime,
+    required String reservationEndTime,
     String? token,
   }) async {
     final response = await http
@@ -40,6 +41,7 @@ class ReservationService {
             'parkingSpaceId': parkingSpaceId,
             'reservationDate': reservationDate,
             'reservationTime': reservationTime,
+            'reservationEndTime': reservationEndTime,
           }),
         )
         .timeout(const Duration(seconds: 15));

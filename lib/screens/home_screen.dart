@@ -77,7 +77,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ListTile(
           leading: const Icon(Icons.calendar_today),
           title: const Text('No tienes próximas reservas'),
-          subtitle: const Text('Busca un espacio para reservar tu parqueadero.'),
+          subtitle: const Text(
+            'Busca un espacio para reservar tu parqueadero.',
+          ),
           trailing: IconButton(
             tooltip: 'Buscar un espacio',
             onPressed: widget.onSearchSpace,
@@ -94,6 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text('Espacio ${reservation.spaceId}'),
         subtitle: Text(
           '${reservation.date} · ${reservation.time}\n'
+          '${reservation.endTime == null ? '' : ' – ${reservation.endTime}'}\n'
           '${reservation.zone} · ${reservation.location}',
         ),
         trailing: const Icon(Icons.check_circle_outline),

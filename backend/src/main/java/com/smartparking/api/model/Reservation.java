@@ -41,6 +41,9 @@ public class Reservation {
     @Column(name = "reservation_time", nullable = false)
     private LocalTime reservationTime;
 
+    @Column(name = "reservation_end_time", nullable = false)
+    private LocalTime reservationEndTime;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Status status = Status.CONFIRMED;
@@ -86,6 +89,14 @@ public class Reservation {
 
     public void setReservationTime(LocalTime reservationTime) {
         this.reservationTime = reservationTime;
+    }
+
+    public LocalTime getReservationEndTime() {
+        return reservationEndTime;
+    }
+
+    public void setReservationEndTime(LocalTime reservationEndTime) {
+        this.reservationEndTime = reservationEndTime;
     }
 
     public Status getStatus() {

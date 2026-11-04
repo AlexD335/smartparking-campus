@@ -5,80 +5,133 @@ import com.smartparking.api.model.ParkingSpace;
 import com.smartparking.api.model.Reservation;
 import com.smartparking.api.repository.ParkingSpaceRepository;
 import com.smartparking.api.repository.ReservationRepository;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
 public class ReservationService {
 
-    private final ReservationRepository reservationRepository;
-    private final ParkingSpaceRepository parkingSpaceRepository;
+        private final ReservationRepository reservationRepository;
+        private final ParkingSpaceRepository parkingSpaceRepository;
 
-    public ReservationService(
-            ReservationRepository reservationRepository,
-            ParkingSpaceRepository parkingSpaceRepository) {
-        this.reservationRepository = reservationRepository;
-        this.parkingSpaceRepository = parkingSpaceRepository;
-    }
-
-    @Transactional
-    public Reservation createReservation(
-            CreateReservationRequest request) {
-
-        ParkingSpace parkingSpace = parkingSpaceRepository
-                .findById(request.parkingSpaceId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Parking space not found"));
-
-        if (!parkingSpace.isAvailable()) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Parking space is not available");
+        public ReservationService(
+                        ReservationRepository reservationRepository,
+                        ParkingSpaceRepository parkingSpaceRepository) {
+                this.reservationRepository = reservationRepository;
+                this.parkingSpaceRepository = parkingSpaceRepository;
         }
 
-        Reservation reservation = new Reservation();
-        reservation.setUserId(request.userId());
-        reservation.setParkingSpace(parkingSpace);
-        reservation.setReservationDate(request.reservationDate());
-        reservation.setReservationTime(request.reservationTime());
-        reservation.setStatus(Reservation.Status.CONFIRMED);
+        @Transactional
+        public Reservation createReservation(CreateReservationRequest request) {
 
-        parkingSpace.setAvailable(false);
-        parkingSpaceRepository.save(parkingSpace);
+                LocalTime startTime = request.reservationTime();
+                LocalTime endTime = request.reservationEndTime();
 
-        return reservationRepository.save(reservation);
-    }
+                // Validar que la hora final sea posterior a la inicial.
+                if (!endTime.isAfter(startTime)) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "La hora de finalización debe ser posterior a la hora de inicio");
+                }
 
-    @Transactional(readOnly = true)
-    public List<Reservation> getReservationsByUserId(Long userId) {
-        return reservationRepository.findByUserId(userId);
-    }
+                // Duración mínima de una hora.
+                if (endTime.isBefore(startTime.plusHours(1))) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "La duración mínima de una reserva es de una hora");
+                }
 
+                // La reserva debe terminar antes de la medianoche.
+                if (endTime.isAfter(LocalTime.of(23, 59))) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "La reserva debe finalizar antes de la medianoche");
+                }
 
-    @Transactional
-    public Reservation cancelReservation(Long reservationId) {
+                // Validar que la reserva esté en el futuro.
+                LocalDateTime reservationDateTime = LocalDateTime.of(
+                                request.reservationDate(),
+                                startTime);
 
-        Reservation reservation = reservationRepository
-                .findById(reservationId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Reservation not found"));
+                LocalDateTime now = LocalDateTime.now(
+                                ZoneId.of("America/Bogota"));
 
-        if (reservation.getStatus() == Reservation.Status.CANCELLED) {
-            return reservation;
+                if (reservationDateTime.isBefore(now)) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "La fecha y hora de la reserva deben estar en el futuro");
+                }
+
+                // Bloquear la plaza para evitar reservas simultáneas.
+                ParkingSpace parkingSpace = parkingSpaceRepository
+                                .findByIdForUpdate(request.parkingSpaceId())
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "No se encontró la plaza"));
+
+                // Comprobar si existe una reserva confirmada que se solape.
+                boolean overlappingReservation = reservationRepository
+                                .existsByParkingSpace_IdAndReservationDateAndStatusAndReservationTimeLessThanAndReservationEndTimeGreaterThan(
+                                                request.parkingSpaceId(),
+                                                request.reservationDate(),
+                                                Reservation.Status.CONFIRMED,
+                                                endTime,
+                                                startTime);
+
+                if (overlappingReservation) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.CONFLICT,
+                                        "La plaza ya está reservada durante ese intervalo");
+                }
+
+                // Crear la reserva.
+                Reservation reservation = new Reservation();
+                reservation.setUserId(request.userId());
+                reservation.setParkingSpace(parkingSpace);
+                reservation.setReservationDate(request.reservationDate());
+                reservation.setReservationTime(startTime);
+                reservation.setReservationEndTime(endTime);
+                reservation.setStatus(Reservation.Status.CONFIRMED);
+
+                Reservation savedReservation = reservationRepository.save(reservation);
+
+                return reservationRepository
+                                .findWithParkingSpaceById(savedReservation.getId())
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "No se encontró la reserva"));
         }
 
-        ParkingSpace parkingSpace = reservation.getParkingSpace();
-        parkingSpace.setAvailable(true);
+        @Transactional(readOnly = true)
+        public List<Reservation> getReservationsByUserId(Long userId) {
+                return reservationRepository.findByUserId(userId);
+        }
 
-        parkingSpaceRepository.save(parkingSpace);
+        @Transactional
+        public Reservation cancelReservation(Long reservationId) {
 
-        reservation.setStatus(Reservation.Status.CANCELLED);
+                Reservation reservation = reservationRepository
+                                .findWithParkingSpaceById(reservationId)
+                                .orElseThrow(() -> new ResponseStatusException(
+                                                HttpStatus.NOT_FOUND,
+                                                "No se encontró la reserva"));
 
-        return reservationRepository.save(reservation);
-    }
+                if (reservation.getStatus() == Reservation.Status.CANCELLED) {
+                        return reservation;
+                }
+
+                // Solo se cancela la reserva.
+                // La disponibilidad se calcula a partir de los intervalos.
+                reservation.setStatus(Reservation.Status.CANCELLED);
+
+                return reservationRepository.save(reservation);
+        }
 }
