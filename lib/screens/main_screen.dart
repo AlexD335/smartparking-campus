@@ -237,7 +237,7 @@ class _MainScreenState extends State<MainScreen> {
               token: widget.session!.token,
             ),
       _buildReservationsContent(),
-      const ProfileScreen(),
+      ProfileScreen(session: widget.session),
     ];
 
     return Scaffold(
