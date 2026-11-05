@@ -21,6 +21,12 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.jwt.Jwt;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -47,16 +53,21 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers(
-                    HttpMethod.GET,
-                    "/api/plazas",
-                    "/api/plazas/**"
-                ).permitAll()
-                .anyRequest().authenticated())
-            .oauth2ResourceServer(oauth2 ->
-                oauth2.jwt(Customizer.withDefaults()));
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/plazas",
+                                "/api/plazas/**")
+                        .permitAll()
+
+                        .requestMatchers("/api/admin/**")
+                        .hasRole("ADMIN")
+
+                        .anyRequest().authenticated())
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
+                        .jwtAuthenticationConverter(jwtAuthenticationConverter())));
 
         return http.build();
     }
@@ -78,5 +89,24 @@ public class SecurityConfig {
     public JwtEncoder jwtEncoder() {
         return new NimbusJwtEncoder(
             new ImmutableSecret<SecurityContext>(secretKey));
+    }
+
+    @Bean
+    public Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {
+
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+
+        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
+            String role = jwt.getClaimAsString("role");
+
+            if (role == null || role.isBlank()) {
+                return List.of();
+            }
+
+            return List.of(
+                    new SimpleGrantedAuthority("ROLE_" + role));
+        });
+
+        return converter;
     }
 }

@@ -6,6 +6,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 
 @Entity
 @Table(name = "app_users")
@@ -24,8 +26,11 @@ public class AppUser {
     @Column(name = "full_name", length = 120)
     private String fullName;
 
-    @Column(name = "institutional_code", length = 30)
-    private String institutionalCode;
+    @Column(name = "document_type", length = 10)
+    private String documentType;
+
+    @Column(name = "document_number", length = 30)
+    private String documentNumber;
 
     @Column(length = 20)
     private String phone;
@@ -38,6 +43,23 @@ public class AppUser {
 
     @Column(name = "vehicle_color", length = 30)
     private String vehicleColor;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Role role = Role.USER;
+
+    public enum Role {
+        ADMIN,
+        USER
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
     public AppUser() {
     }
@@ -74,12 +96,20 @@ public class AppUser {
         this.fullName = fullName;
     }
 
-    public String getInstitutionalCode() {
-        return institutionalCode;
+    public String getDocumentType() {
+        return documentType;
     }
 
-    public void setInstitutionalCode(String institutionalCode) {
-        this.institutionalCode = institutionalCode;
+    public void setDocumentType(String documentType) {
+        this.documentType = documentType;
+    }
+
+    public String getDocumentNumber() {
+        return documentNumber;
+    }
+
+    public void setDocumentNumber(String documentNumber) {
+        this.documentNumber = documentNumber;
     }
 
     public String getPhone() {

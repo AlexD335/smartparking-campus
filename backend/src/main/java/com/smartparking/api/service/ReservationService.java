@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.time.LocalDate;
+import java.util.stream.Collectors;
 
 @Service
 public class ReservationService {
@@ -133,5 +135,30 @@ public class ReservationService {
                 reservation.setStatus(Reservation.Status.CANCELLED);
 
                 return reservationRepository.save(reservation);
+        }
+
+        @Transactional(readOnly = true)
+        public List<ParkingSpace> getAvailableParkingSpaces(
+                        LocalDate date,
+                        LocalTime startTime,
+                        LocalTime endTime) {
+
+                if (!endTime.isAfter(startTime)) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "La hora final debe ser posterior a la hora inicial");
+                }
+
+                return parkingSpaceRepository.findAll()
+                                .stream()
+                                .filter(ParkingSpace::isAvailable)
+                                .filter(parkingSpace -> !reservationRepository
+                                                .existsByParkingSpace_IdAndReservationDateAndStatusAndReservationTimeLessThanAndReservationEndTimeGreaterThan(
+                                                                parkingSpace.getId(),
+                                                                date,
+                                                                Reservation.Status.CONFIRMED,
+                                                                endTime,
+                                                                startTime))
+                                .collect(Collectors.toList());
         }
 }

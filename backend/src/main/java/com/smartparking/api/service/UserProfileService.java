@@ -10,10 +10,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Set;
+
 @Service
 public class UserProfileService {
 
     private final AppUserRepository appUserRepository;
+
+    private static final Set<String> DOCUMENT_TYPES =
+            Set.of("CC", "TI", "CE", "PA", "PPT");
 
     public UserProfileService(AppUserRepository appUserRepository) {
         this.appUserRepository = appUserRepository;
@@ -32,8 +37,30 @@ public class UserProfileService {
 
         AppUser user = findUser(email);
 
+        String documentType = clean(request.documentType());
+        String documentNumber = clean(request.documentNumber());
+
+        if ((documentType == null) != (documentNumber == null)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Debes indicar el tipo y el número de documento"
+            );
+        }
+
+        if (documentType != null) {
+            documentType = documentType.toUpperCase();
+
+            if (!DOCUMENT_TYPES.contains(documentType)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "El tipo de documento no es válido"
+                );
+            }
+        }
+
         user.setFullName(request.fullName().trim());
-        user.setInstitutionalCode(clean(request.institutionalCode()));
+        user.setDocumentType(documentType);
+        user.setDocumentNumber(documentNumber);
         user.setPhone(clean(request.phone()));
         user.setVehicleType(clean(request.vehicleType()));
         user.setVehiclePlate(clean(request.vehiclePlate()));
@@ -63,7 +90,8 @@ public class UserProfileService {
         return new UserProfileResponse(
                 user.getId(),
                 user.getFullName(),
-                user.getInstitutionalCode(),
+                user.getDocumentType(),
+                user.getDocumentNumber(),
                 user.getPhone(),
                 user.getEmail(),
                 user.getVehicleType(),

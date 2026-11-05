@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/reservation.dart';
 import '../services/reservation_service.dart';
+import '../services/parking_space_service.dart';
 
 class ReservationScreen extends StatefulWidget {
   const ReservationScreen({
@@ -147,6 +148,39 @@ class _ReservationScreenState extends State<ReservationScreen> {
     final navigator = Navigator.of(context);
 
     try {
+      // Consultar si la plaza sigue disponible para el intervalo elegido.
+      final availableSpaces = await ParkingSpaceService()
+          .getAvailableParkingSpaces(
+            date: _selectedDate,
+            startTime: reservationTime,
+            endTime: reservationEndTime,
+            token: widget.token,
+          );
+
+      if (!mounted) return;
+
+      final isAvailable = availableSpaces.any(
+        (space) => space.id == widget.parkingSpaceId,
+      );
+
+      if (!isAvailable) {
+        setState(() {
+          _isSubmitting = false;
+        });
+
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Esta plaza ya no está disponible para el horario seleccionado. '
+              'Selecciona otra fecha u horario.',
+            ),
+          ),
+        );
+
+        return;
+      }
+
+      // Si sigue disponible, registrar la reserva.
       await ReservationService().createReservation(
         userId: widget.userId,
         parkingSpaceId: widget.parkingSpaceId,

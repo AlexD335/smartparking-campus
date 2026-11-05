@@ -9,8 +9,11 @@ public record UpdateUserProfileRequest(
         @Size(max = 120)
         String fullName,
 
+        @Size(max = 10)
+        String documentType,
+
         @Size(max = 30)
-        String institutionalCode,
+        String documentNumber,
 
         @Size(max = 20)
         String phone,

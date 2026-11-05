@@ -201,6 +201,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
 
+        const SizedBox(height: 16),
+
+        TextField(
+          readOnly: true,
+          controller: TextEditingController(
+            text: widget.session?.role == 'ADMIN'
+                ? 'Administrador'
+                : 'Estudiante',
+          ),
+          decoration: const InputDecoration(
+            labelText: 'Rol de usuario',
+            prefixIcon: Icon(Icons.admin_panel_settings_outlined),
+            border: OutlineInputBorder(),
+          ),
+        ),
+
         const SizedBox(height: 28),
 
         const Text(

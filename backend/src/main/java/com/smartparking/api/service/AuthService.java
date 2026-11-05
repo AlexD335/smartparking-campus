@@ -53,6 +53,8 @@ public class AuthService {
 
         AppUser savedUser = appUserRepository.save(user);
 
+        user.setRole(AppUser.Role.USER);
+
         return createAuthResponse(savedUser);
     }
 
@@ -85,6 +87,7 @@ public class AuthService {
                 .expiresAt(now.plusSeconds(8 * 60 * 60))
                 .subject(user.getEmail())
                 .claim("userId", user.getId())
+                .claim("role", user.getRole().name())
                 .build();
 
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();

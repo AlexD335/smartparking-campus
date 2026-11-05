@@ -110,9 +110,7 @@ class _ParkingScreenState extends State<ParkingScreen> {
                   id: space.code,
                   zone: space.zone,
                   location: space.location,
-                  available:
-                      space.available &&
-                      !widget.reservedSpaceIds.contains(space.code),
+                  available: space.available,
                   userId: widget.userId,
                   token: widget.token,
                   onReservationCreated: widget.onReservationCreated,
