@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/auth_session.dart';
 import '../models/user_profile.dart';
 import '../services/user_profile_service.dart';
+import 'login_screen.dart';
+import '../theme/theme_controller.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key, this.session});
@@ -17,7 +19,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final UserProfileService _service = UserProfileService();
 
   final _fullNameController = TextEditingController();
-  final _institutionalCodeController = TextEditingController();
+  final _documentNumberController = TextEditingController();
   final _phoneController = TextEditingController();
   final _vehicleTypeController = TextEditingController();
   final _vehiclePlateController = TextEditingController();
@@ -27,6 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = true;
   bool _isSaving = false;
   String? _error;
+  String? _selectedDocumentType;
 
   @override
   void initState() {
@@ -37,7 +40,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void dispose() {
     _fullNameController.dispose();
-    _institutionalCodeController.dispose();
+    _documentNumberController.dispose();
     _phoneController.dispose();
     _vehicleTypeController.dispose();
     _vehiclePlateController.dispose();
@@ -68,7 +71,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       _profile = profile;
       _fullNameController.text = profile.fullName ?? '';
-      _institutionalCodeController.text = profile.institutionalCode ?? '';
+      _documentNumberController.text = profile.documentNumber ?? '';
+      _selectedDocumentType = profile.documentType;
       _phoneController.text = profile.phone ?? '';
       _vehicleTypeController.text = profile.vehicleType ?? '';
       _vehiclePlateController.text = profile.vehiclePlate ?? '';
@@ -102,7 +106,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         session: session,
         data: {
           'fullName': _fullNameController.text.trim(),
-          'institutionalCode': _institutionalCodeController.text.trim(),
+          'documentType': _selectedDocumentType,
+          'documentNumber': _documentNumberController.text.trim(),
           'phone': _phoneController.text.trim(),
           'vehicleType': _vehicleTypeController.text.trim(),
           'vehiclePlate': _vehiclePlateController.text.trim(),
@@ -124,6 +129,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       _showMessage(error.toString().replaceFirst('Exception: ', ''));
     }
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Estás seguro de que deseas cerrar tu sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Cerrar sesión'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
   }
 
   void _showMessage(String message) {
@@ -179,10 +211,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
           controller: _fullNameController,
           icon: Icons.person_outline,
         ),
+
+        DropdownButtonFormField<String>(
+          initialValue: _selectedDocumentType,
+          decoration: const InputDecoration(
+            labelText: 'Tipo de documento',
+            prefixIcon: Icon(Icons.badge_outlined),
+            border: OutlineInputBorder(),
+          ),
+          items: const [
+            DropdownMenuItem(value: 'CC', child: Text('Cédula de ciudadanía')),
+            DropdownMenuItem(value: 'TI', child: Text('Tarjeta de identidad')),
+            DropdownMenuItem(value: 'CE', child: Text('Cédula de extranjería')),
+            DropdownMenuItem(value: 'PA', child: Text('Pasaporte')),
+            DropdownMenuItem(
+              value: 'PPT',
+              child: Text('Permiso por protección temporal'),
+            ),
+          ],
+          onChanged: (value) {
+            setState(() {
+              _selectedDocumentType = value;
+            });
+          },
+        ),
+
+        const SizedBox(height: 16),
+
         _buildField(
-          label: 'Código institucional',
-          controller: _institutionalCodeController,
-          icon: Icons.badge_outlined,
+          label: 'Número de documento',
+          controller: _documentNumberController,
+          icon: Icons.numbers_outlined,
+          keyboardType: TextInputType.text,
         ),
         _buildField(
           label: 'Teléfono',
@@ -257,6 +317,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
             label: Text(_isSaving ? 'Guardando...' : 'Guardar cambios'),
           ),
         ),
+
+        const SizedBox(height: 24),
+
+        const Text(
+          'Preferencias',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+
+        const SizedBox(height: 12),
+
+        ValueListenableBuilder<ThemeMode>(
+          valueListenable: ThemeController.themeMode,
+          builder: (context, themeMode, child) {
+            return SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: Icon(
+                themeMode == ThemeMode.dark
+                    ? Icons.dark_mode
+                    : Icons.light_mode,
+              ),
+              title: const Text('Modo oscuro'),
+              subtitle: Text(
+                themeMode == ThemeMode.dark ? 'Activado' : 'Desactivado',
+              ),
+              value: themeMode == ThemeMode.dark,
+              onChanged: (value) {
+                ThemeController.setDarkMode(value);
+              },
+            );
+          },
+        ),
+
+        const SizedBox(height: 12),
+
+        SizedBox(
+          height: 50,
+          child: OutlinedButton.icon(
+            onPressed: _logout,
+            icon: const Icon(Icons.logout),
+            label: const Text('CERRAR SESIÓN'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
       ],
     );
   }
