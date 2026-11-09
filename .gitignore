@@ -46,3 +46,13 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+.env
+
+# Local development files
+.vscode/
+*.dump
+*.backup
+!.env.example
+
+# Maven generated files
+/backend/effective-pom
