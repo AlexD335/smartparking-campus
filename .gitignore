@@ -53,3 +53,6 @@ app.*.map.json
 *.dump
 *.backup
 !.env.example
+
+# Maven generated files
+/backend/effective-pom
