@@ -58,6 +58,21 @@ public class UserProfileService {
             }
         }
 
+        if (documentType != null) {
+            documentNumber = documentNumber.toUpperCase();
+
+            boolean documentExists = appUserRepository.existsByDocumentTypeAndDocumentNumberAndIdNot(
+                    documentType,
+                    documentNumber,
+                    user.getId());
+
+            if (documentExists) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Este documento ya está registrado");
+            }
+        }
+
         user.setFullName(request.fullName().trim());
         user.setDocumentType(documentType);
         user.setDocumentNumber(documentNumber);

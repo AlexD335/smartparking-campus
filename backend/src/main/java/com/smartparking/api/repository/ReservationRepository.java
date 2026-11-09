@@ -18,6 +18,9 @@ public interface ReservationRepository
         @EntityGraph(attributePaths = "parkingSpace")
         Optional<Reservation> findWithParkingSpaceById(Long id);
 
+        @EntityGraph(attributePaths = "parkingSpace")
+        List<Reservation> findAll();
+
         boolean existsByParkingSpace_IdAndReservationDateAndStatusAndReservationTimeLessThanAndReservationEndTimeGreaterThan(
                         Long parkingSpaceId,
                         LocalDate reservationDate,

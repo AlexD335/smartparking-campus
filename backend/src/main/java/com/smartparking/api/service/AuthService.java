@@ -50,10 +50,9 @@ public class AuthService {
         user.setEmail(email);
         user.setPasswordHash(
                 passwordEncoder.encode(request.password()));
+        user.setRole(AppUser.Role.USER);
 
         AppUser savedUser = appUserRepository.save(user);
-
-        user.setRole(AppUser.Role.USER);
 
         return createAuthResponse(savedUser);
     }

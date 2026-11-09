@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -37,26 +38,7 @@ public class ReservationService {
                 LocalTime startTime = request.reservationTime();
                 LocalTime endTime = request.reservationEndTime();
 
-                // Validar que la hora final sea posterior a la inicial.
-                if (!endTime.isAfter(startTime)) {
-                        throw new ResponseStatusException(
-                                        HttpStatus.BAD_REQUEST,
-                                        "La hora de finalización debe ser posterior a la hora de inicio");
-                }
-
-                // Duración mínima de una hora.
-                if (endTime.isBefore(startTime.plusHours(1))) {
-                        throw new ResponseStatusException(
-                                        HttpStatus.BAD_REQUEST,
-                                        "La duración mínima de una reserva es de una hora");
-                }
-
-                // La reserva debe terminar antes de la medianoche.
-                if (endTime.isAfter(LocalTime.of(23, 59))) {
-                        throw new ResponseStatusException(
-                                        HttpStatus.BAD_REQUEST,
-                                        "La reserva debe finalizar antes de la medianoche");
-                }
+                validateTimeRange(startTime, endTime);
 
                 // Validar que la reserva esté en el futuro.
                 LocalDateTime reservationDateTime = LocalDateTime.of(
@@ -78,6 +60,12 @@ public class ReservationService {
                                 .orElseThrow(() -> new ResponseStatusException(
                                                 HttpStatus.NOT_FOUND,
                                                 "No se encontró la plaza"));
+
+                if (!parkingSpace.isAvailable()) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.CONFLICT,
+                                        "La plaza está deshabilitada para reservas");
+                }
 
                 // Comprobar si existe una reserva confirmada que se solape.
                 boolean overlappingReservation = reservationRepository
@@ -113,6 +101,11 @@ public class ReservationService {
         }
 
         @Transactional(readOnly = true)
+        public List<Reservation> getAllReservations() {
+                return reservationRepository.findAll();
+        }
+
+        @Transactional(readOnly = true)
         public List<Reservation> getReservationsByUserId(Long userId) {
                 return reservationRepository.findByUserId(userId);
         }
@@ -143,11 +136,7 @@ public class ReservationService {
                         LocalTime startTime,
                         LocalTime endTime) {
 
-                if (!endTime.isAfter(startTime)) {
-                        throw new ResponseStatusException(
-                                        HttpStatus.BAD_REQUEST,
-                                        "La hora final debe ser posterior a la hora inicial");
-                }
+                validateTimeRange(startTime, endTime);
 
                 return parkingSpaceRepository.findAll()
                                 .stream()
@@ -161,4 +150,25 @@ public class ReservationService {
                                                                 startTime))
                                 .collect(Collectors.toList());
         }
+
+        private void validateTimeRange(LocalTime startTime, LocalTime endTime) {
+                if (startTime == null || endTime == null || !endTime.isAfter(startTime)) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "La hora de finalización debe ser posterior a la hora de inicio");
+                }
+
+                if (Duration.between(startTime, endTime).compareTo(Duration.ofHours(1)) < 0) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "La duración mínima de una reserva es de una hora");
+                }
+
+                if (endTime.isAfter(LocalTime.of(23, 59))) {
+                        throw new ResponseStatusException(
+                                        HttpStatus.BAD_REQUEST,
+                                        "La reserva debe finalizar antes de la medianoche");
+                }
+        }
+
 }

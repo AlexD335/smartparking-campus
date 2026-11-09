@@ -8,6 +8,7 @@ import 'home_screen.dart';
 import 'parking_screen.dart';
 import 'reservations_screen.dart';
 import 'profile_screen.dart';
+import 'admin_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key, this.session});
@@ -215,7 +216,7 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screens = [
+    final screens = <Widget>[
       HomeScreen(
         onSearchSpace: () => _onDestinationSelected(1),
         nextReservation: _nextReservation,
@@ -223,6 +224,7 @@ class _MainScreenState extends State<MainScreen> {
         nextReservationError: _reservationsError,
         onRetryReservations: () => _loadReservations(showLoading: true),
       ),
+
       widget.session == null
           ? Scaffold(
               appBar: AppBar(title: const Text('Parqueadero')),
@@ -236,7 +238,12 @@ class _MainScreenState extends State<MainScreen> {
               userId: widget.session!.userId,
               token: widget.session!.token,
             ),
+
       _buildReservationsContent(),
+
+      if (widget.session?.isAdmin ?? false)
+        AdminScreen(session: widget.session!),
+
       ProfileScreen(session: widget.session),
     ];
 
@@ -245,6 +252,7 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: BottomNavigation(
         currentIndex: _currentIndex,
         onDestinationSelected: _onDestinationSelected,
+        isAdmin: widget.session?.isAdmin ?? false,
       ),
     );
   }
