@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/auth_session.dart';
 import '../models/reservation.dart';
 import '../services/reservation_service.dart';
+import '../services/user_profile_service.dart';
 import '../widgets/bottom_navigation.dart';
 import 'home_screen.dart';
 import 'parking_screen.dart';
@@ -21,6 +22,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final ReservationService _reservationService = ReservationService();
+  final UserProfileService _userProfileService = UserProfileService();
+  String _userName = 'Estudiante';
 
   int _currentIndex = 0;
   List<Reservation> _reservations = [];
@@ -36,6 +39,21 @@ class _MainScreenState extends State<MainScreen> {
       _reservationsError = 'Inicia sesión para consultar tus reservas.';
     } else {
       _loadReservations();
+      _loadUserName();
+    }
+  }
+
+  Future<void> _loadUserName() async {
+    final session = widget.session;
+    if (session == null) return;
+    try {
+      final profile = await _userProfileService.getProfile(session);
+      final name = profile.fullName?.trim() ?? '';
+      if (!mounted) return;
+      setState(() => _userName = name.isEmpty ? 'Estudiante' : name);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _userName = 'Estudiante');
     }
   }
 
@@ -140,6 +158,10 @@ class _MainScreenState extends State<MainScreen> {
     if (index == 2) {
       _loadReservations(showLoading: true);
     }
+    // Actualiza el saludo al volver desde la pantalla de perfil.
+    if (index == 0) {
+      _loadUserName();
+    }
   }
 
   void _addReservation(Reservation reservation) {
@@ -218,6 +240,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final screens = <Widget>[
       HomeScreen(
+        userName: _userName,
         onSearchSpace: () => _onDestinationSelected(1),
         nextReservation: _nextReservation,
         isLoadingNextReservation: _isLoadingReservations,

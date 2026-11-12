@@ -3,6 +3,7 @@ package com.smartparking.api.controller;
 import com.smartparking.api.dto.CreateParkingSpaceRequest;
 import com.smartparking.api.model.ParkingSpace;
 import com.smartparking.api.repository.ParkingSpaceRepository;
+import com.smartparking.api.repository.ReservationRepository;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,10 +14,13 @@ import org.springframework.web.bind.annotation.*;
 public class AdminParkingSpaceController {
 
     private final ParkingSpaceRepository parkingSpaceRepository;
+    private final ReservationRepository reservationRepository;
 
     public AdminParkingSpaceController(
-            ParkingSpaceRepository parkingSpaceRepository) {
+            ParkingSpaceRepository parkingSpaceRepository,
+            ReservationRepository reservationRepository) {
         this.parkingSpaceRepository = parkingSpaceRepository;
+        this.reservationRepository = reservationRepository;
     }
 
     @PostMapping
@@ -54,6 +58,22 @@ public class AdminParkingSpaceController {
         ParkingSpace saved = parkingSpaceRepository.save(space);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteParkingSpace(@PathVariable Long id) {
+        var optionalSpace = parkingSpaceRepository.findById(id);
+        if (optionalSpace.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        if (reservationRepository.existsByParkingSpace_Id(id)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("No se puede eliminar la plaza porque tiene reservas asociadas.");
+        }
+
+        parkingSpaceRepository.delete(optionalSpace.get());
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/{id}/disponibilidad")

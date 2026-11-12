@@ -122,154 +122,161 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: SingleChildScrollView(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: MediaQuery.sizeOf(context).height - 48,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(Icons.local_parking, size: 80),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'SmartParking Campus',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _isRegistering
-                        ? 'Crea tu cuenta para comenzar'
-                        : 'Gestiona tu parqueadero de forma sencilla',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                  const SizedBox(height: 40),
-                  TextField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    autocorrect: false,
-                    enabled: !_isLoading,
-                    decoration: InputDecoration(
-                      labelText: 'Correo institucional',
-                      hintText: 'estudiante@universidad.edu',
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    textInputAction: TextInputAction.next,
-                    enabled: !_isLoading,
-                    decoration: InputDecoration(
-                      labelText: 'Contraseña',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        tooltip: _obscurePassword
-                            ? 'Mostrar contraseña'
-                            : 'Ocultar contraseña',
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Icon(Icons.local_parking, size: 80),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'SmartParking Campus',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      const SizedBox(height: 8),
+                      Text(
+                        _isRegistering
+                            ? 'Crea tu cuenta para comenzar'
+                            : 'Gestiona tu parqueadero de forma sencilla',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 16),
                       ),
-                    ),
-                  ),
-                  if (_isRegistering) ...[
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _confirmPasswordController,
-                      obscureText: _obscureConfirmPassword,
-                      textInputAction: TextInputAction.done,
-                      enabled: !_isLoading,
-                      onSubmitted: (_) {
-                        if (!_isLoading) _register();
-                      },
-                      decoration: InputDecoration(
-                        labelText: 'Confirmar contraseña',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          tooltip: _obscureConfirmPassword
-                              ? 'Mostrar contraseña'
-                              : 'Ocultar contraseña',
-                          onPressed: () {
-                            setState(() {
-                              _obscureConfirmPassword =
-                                  !_obscureConfirmPassword;
-                            });
-                          },
-                          icon: Icon(
-                            _obscureConfirmPassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
+                      const SizedBox(height: 40),
+                      TextField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        autocorrect: false,
+                        enabled: !_isLoading,
+                        decoration: InputDecoration(
+                          labelText: 'Correo institucional',
+                          hintText: 'estudiante@universidad.edu',
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.next,
+                        enabled: !_isLoading,
+                        decoration: InputDecoration(
+                          labelText: 'Contraseña',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            tooltip: _obscurePassword
+                                ? 'Mostrar contraseña'
+                                : 'Ocultar contraseña',
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _isLoading
-                          ? null
-                          : (_isRegistering ? _register : _login),
-                      child: _isLoading
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(
-                              _isRegistering
-                                  ? 'CREAR CUENTA'
-                                  : 'INICIAR SESIÓN',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                      if (_isRegistering) ...[
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscureConfirmPassword,
+                          textInputAction: TextInputAction.done,
+                          enabled: !_isLoading,
+                          onSubmitted: (_) {
+                            if (!_isLoading) _register();
+                          },
+                          decoration: InputDecoration(
+                            labelText: 'Confirmar contraseña',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              tooltip: _obscureConfirmPassword
+                                  ? 'Mostrar contraseña'
+                                  : 'Ocultar contraseña',
+                              onPressed: () {
+                                setState(() {
+                                  _obscureConfirmPassword =
+                                      !_obscureConfirmPassword;
+                                });
+                              },
+                              icon: Icon(
+                                _obscureConfirmPassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
                               ),
                             ),
-                    ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: _isLoading
+                              ? null
+                              : (_isRegistering ? _register : _login),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Text(
+                                  _isRegistering
+                                      ? 'CREAR CUENTA'
+                                      : 'INICIAR SESIÓN',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextButton(
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                setState(() {
+                                  _isRegistering = !_isRegistering;
+                                  _confirmPasswordController.clear();
+                                });
+                              },
+                        child: Text(
+                          _isRegistering
+                              ? '¿Ya tienes una cuenta? Inicia sesión'
+                              : '¿No tienes cuenta? Crear cuenta',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () {
-                            setState(() {
-                              _isRegistering = !_isRegistering;
-                              _confirmPasswordController.clear();
-                            });
-                          },
-                    child: Text(
-                      _isRegistering
-                          ? '¿Ya tienes una cuenta? Inicia sesión'
-                          : '¿No tienes cuenta? Crear cuenta',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),

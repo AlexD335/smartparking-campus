@@ -22,7 +22,9 @@ class _AdminScreenState extends State<AdminScreen> {
   late Future<List<Reservation>> _reservationsFuture;
 
   final Set<int> _updatingSpaces = {};
+  final Set<int> _deletingSpaces = {};
   final Set<int> _cancellingReservations = {};
+  bool _creatingSpace = false;
 
   String _reservationFilter = 'ALL';
 
@@ -53,6 +55,45 @@ class _AdminScreenState extends State<AdminScreen> {
   Future<void> _refreshReservations() async {
     setState(_loadReservations);
     await _reservationsFuture;
+  }
+
+  Future<void> _showCreateSpaceDialog() async {
+    final data = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (_) => const _CreateParkingSpaceDialog(),
+    );
+
+    if (data == null || !mounted) return;
+
+    setState(() => _creatingSpace = true);
+
+    try {
+      final createdSpace = await _adminService.createParkingSpace(
+        session: widget.session,
+        code: data['code']!,
+        zone: data['zone']!,
+        location: data['location']!,
+      );
+
+      if (!mounted) return;
+
+      setState(_loadSpaces);
+      await _spacesFuture;
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Plaza ${createdSpace.code} creada correctamente.'),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      final message = error.toString().replaceFirst('Exception: ', '');
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) setState(() => _creatingSpace = false);
+    }
   }
 
   Future<void> _changeAvailability(ParkingSpace space, bool available) async {
@@ -90,6 +131,52 @@ class _AdminScreenState extends State<AdminScreen> {
           _updatingSpaces.remove(space.id);
         });
       }
+    }
+  }
+
+  Future<void> _deleteParkingSpace(ParkingSpace space) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminar plaza'),
+        content: Text(
+          '¿Deseas eliminar la plaza ${space.code}? Esta acción no se puede deshacer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    setState(() => _deletingSpaces.add(space.id));
+    try {
+      await _adminService.deleteParkingSpace(
+        session: widget.session,
+        parkingSpaceId: space.id,
+      );
+      if (!mounted) return;
+      setState(_loadSpaces);
+      await _spacesFuture;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Plaza ${space.code} eliminada correctamente.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      final message = error.toString().replaceFirst('Exception: ', '');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } finally {
+      if (mounted) setState(() => _deletingSpaces.remove(space.id));
     }
   }
 
@@ -185,6 +272,7 @@ class _AdminScreenState extends State<AdminScreen> {
 
   Widget _buildSpaceCard(ParkingSpace space) {
     final isUpdating = _updatingSpaces.contains(space.id);
+    final isDeleting = _deletingSpaces.contains(space.id);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -217,17 +305,25 @@ class _AdminScreenState extends State<AdminScreen> {
             ),
           ],
         ),
-        trailing: isUpdating
+        trailing: isUpdating || isDeleting
             ? const SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
-            : Switch(
-                value: space.available,
-                onChanged: (value) {
-                  _changeAvailability(space, value);
-                },
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Switch(
+                    value: space.available,
+                    onChanged: (value) => _changeAvailability(space, value),
+                  ),
+                  IconButton(
+                    tooltip: 'Eliminar plaza',
+                    onPressed: () => _deleteParkingSpace(space),
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  ),
+                ],
               ),
       ),
     );
@@ -250,10 +346,6 @@ class _AdminScreenState extends State<AdminScreen> {
 
         final spaces = snapshot.data ?? [];
 
-        if (spaces.isEmpty) {
-          return const Center(child: Text('No hay plazas registradas.'));
-        }
-
         return RefreshIndicator(
           onRefresh: _refreshSpaces,
           child: ListView(
@@ -271,13 +363,36 @@ class _AdminScreenState extends State<AdminScreen> {
               ),
               const SizedBox(height: 20),
               _buildSummary(spaces),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _creatingSpace ? null : _showCreateSpaceDialog,
+                  icon: _creatingSpace
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.add),
+                  label: Text(
+                    _creatingSpace ? 'Creando plaza...' : 'Crear plaza',
+                  ),
+                ),
+              ),
               const SizedBox(height: 28),
               const Text(
                 'Gestión de plazas',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              ...spaces.map(_buildSpaceCard),
+              if (spaces.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: Text('No hay plazas registradas.')),
+                )
+              else
+                ...spaces.map(_buildSpaceCard),
             ],
           ),
         );
@@ -647,5 +762,127 @@ class _SummaryCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _CreateParkingSpaceDialog extends StatefulWidget {
+  const _CreateParkingSpaceDialog();
+
+  @override
+  State<_CreateParkingSpaceDialog> createState() =>
+      _CreateParkingSpaceDialogState();
+}
+
+class _CreateParkingSpaceDialogState extends State<_CreateParkingSpaceDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _codeController = TextEditingController();
+  final _zoneController = TextEditingController();
+  final _locationController = TextEditingController();
+
+  @override
+  void dispose() {
+    _codeController.dispose();
+    _zoneController.dispose();
+    _locationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Crear plaza'),
+      content: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextFormField(
+                controller: _codeController,
+                textCapitalization: TextCapitalization.characters,
+                maxLength: 20,
+                decoration: const InputDecoration(
+                  labelText: 'Código',
+                  hintText: 'Ej. A-28',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.local_parking),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Ingresa el código de la plaza.';
+                  }
+                  if (value.trim().length > 20) {
+                    return 'El código no puede superar 20 caracteres.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _zoneController,
+                maxLength: 50,
+                decoration: const InputDecoration(
+                  labelText: 'Zona',
+                  hintText: 'Ej. Zona A',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.map_outlined),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Ingresa la zona.';
+                  }
+                  if (value.trim().length > 50) {
+                    return 'La zona no puede superar 50 caracteres.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _locationController,
+                maxLength: 150,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Ubicación',
+                  hintText: 'Ej. Cerca del Bloque 2',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.location_on_outlined),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Ingresa la ubicación.';
+                  }
+                  if (value.trim().length > 150) {
+                    return 'La ubicación no puede superar 150 caracteres.';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.add),
+          label: const Text('Crear'),
+        ),
+      ],
+    );
+  }
+
+  void _submit() {
+    if (!_formKey.currentState!.validate()) return;
+
+    Navigator.of(context).pop({
+      'code': _codeController.text.trim(),
+      'zone': _zoneController.text.trim(),
+      'location': _locationController.text.trim(),
+    });
   }
 }
