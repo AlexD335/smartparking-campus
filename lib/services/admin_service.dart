@@ -32,6 +32,63 @@ class AdminService {
         .toList();
   }
 
+  Future<ParkingSpace> createParkingSpace({
+    required AuthSession session,
+    required String code,
+    required String zone,
+    required String location,
+  }) async {
+    final response = await http
+        .post(
+          Uri.parse('$_baseUrl/admin/plazas'),
+          headers: {
+            ...session.authorizationHeaders,
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'code': code.trim(),
+            'zone': zone.trim(),
+            'location': location.trim(),
+          }),
+        )
+        .timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 409) {
+      throw Exception('Ya existe una plaza con ese código.');
+    }
+
+    if (response.statusCode != 201) {
+      throw Exception('No se pudo crear la plaza. HTTP ${response.statusCode}');
+    }
+
+    return ParkingSpace.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+
+  Future<void> deleteParkingSpace({
+    required AuthSession session,
+    required int parkingSpaceId,
+  }) async {
+    final response = await http
+        .delete(
+          Uri.parse('$_baseUrl/admin/plazas/$parkingSpaceId'),
+          headers: session.authorizationHeaders,
+        )
+        .timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 204) return;
+    if (response.statusCode == 409) {
+      throw Exception(
+        'No se puede eliminar la plaza porque tiene reservas asociadas.',
+      );
+    }
+    if (response.statusCode == 404) {
+      throw Exception('La plaza ya no existe.');
+    }
+    throw Exception('No se pudo eliminar la plaza. HTTP ${response.statusCode}');
+  }
+
   Future<ParkingSpace> updateAvailability({
     required AuthSession session,
     required int parkingSpaceId,

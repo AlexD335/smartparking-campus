@@ -8,6 +8,7 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     this.onSearchSpace,
+    this.userName = 'Estudiante',
     this.nextReservation,
     this.isLoadingNextReservation = false,
     this.nextReservationError,
@@ -15,6 +16,7 @@ class HomeScreen extends StatefulWidget {
   });
 
   final VoidCallback? onSearchSpace;
+  final String userName;
   final Reservation? nextReservation;
   final bool isLoadingNextReservation;
   final String? nextReservationError;
@@ -123,9 +125,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '¡Hola, estudiante!',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            Text(
+              '¡Hola, ${widget.userName.trim().isEmpty ? 'Estudiante' : widget.userName.trim()}!',
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
