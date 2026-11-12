@@ -5,7 +5,8 @@ import 'package:http/http.dart' as http;
 import '../models/auth_session.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://192.168.1.72:8080/api';
+  static const String _baseUrl =
+      'https://smartparking-campus-production.up.railway.app/api';
 
   Future<AuthSession> login({
     required String email,

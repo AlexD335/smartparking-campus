@@ -11,6 +11,8 @@ import java.util.Optional;
 
 public interface ParkingSpaceRepository
                 extends JpaRepository<ParkingSpace, Long> {
+        
+        boolean existsByCodeIgnoreCase(String code);
 
         @Lock(LockModeType.PESSIMISTIC_WRITE)
         @Query("SELECT p FROM ParkingSpace p WHERE p.id = :id")

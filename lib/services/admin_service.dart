@@ -8,7 +8,8 @@ import '../models/reservation.dart';
 import '../models/admin_user.dart';
 
 class AdminService {
-  static const String _baseUrl = 'http://192.168.1.72:8080/api';
+  static const String _baseUrl =
+      'https://smartparking-campus-production.up.railway.app/api';
 
   Future<List<ParkingSpace>> getParkingSpaces(AuthSession session) async {
     final response = await http
